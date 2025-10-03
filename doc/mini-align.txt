@@ -1,10 +1,9 @@
 *mini.align* Align text interactively
-*MiniAlign*
 
 MIT License Copyright (c) 2022 Evgeni Chasnovski
 
-==============================================================================
-
+------------------------------------------------------------------------------
+                                                                     *MiniAlign*
 Rich and flexible customization of both alignment rules and user interaction.
 Works with charwise, linewise, and blockwise selections in both Normal mode
 (on textobject/motion; with dot-repeat) and Visual mode.
@@ -56,7 +55,7 @@ To stop module from showing non-error feedback, set `config.silent = true`.
 
 # Comparisons ~
 
-- 'junegunn/vim-easy-align':
+- [junegunn/vim-easy-align](https://github.com/junegunn/vim-easy-align):
     - 'mini.align' is mostly designed after 'junegunn/vim-easy-align', so
       there are a lot of similarities.
     - Both plugins allow users to change alignment options interactively by
@@ -71,13 +70,13 @@ To stop module from showing non-error feedback, set `config.silent = true`.
       'mini.align' initially aligns by all delimiter.
     - 'junegunn/vim-easy-align' implements special filtering by delimiter
       row number. 'mini.align' has builtin filtering based on Lua code
-      supplied by user in modifier phase. See |MiniAlign.gen_step.filter|
+      supplied by user in modifier phase. See |MiniAlign.gen_step.filter()|
       and 'f' builtin modifier.
     - 'mini.align' treats any non-registered modifier as a plain delimiter
       pattern, while 'junegunn/vim-easy-align' does not.
     - 'mini.align' exports core Lua function used for aligning strings
       (|MiniAlign.align_strings()|).
-- 'godlygeek/tabular':
+- [godlygeek/tabular](https://github.com/godlygeek/tabular):
     - 'godlygeek/tabular' is mostly designed around single command which is
       customized by printing its parameters. 'mini.align' implements
       different concept of interactive alignment through pressing
@@ -96,45 +95,49 @@ recipes.
 
 ------------------------------------------------------------------------------
                                                             *MiniAlign-glossary*
-Glossary
+PARTS ~
+2d array of strings (array of arrays of strings).
+See more in |MiniAlign.as_parts()|.
 
-PARTS   2d array of strings (array of arrays of strings).
-        See more in |MiniAlign.as_parts()|.
+ROW ~
+First-level array of parts (like `parts[1]`).
 
-ROW     First-level array of parts (like `parts[1]`).
+COLUMN ~
+Array of strings, constructed from parts elements with the same
+second-level index (like `{ parts[1][1],` `parts[2][1], ... }`).
 
-COLUMN  Array of strings, constructed from parts elements with the same
-        second-level index (like `{ parts[1][1],` `parts[2][1], ... }`).
+STEP ~
+A named callable. See |MiniAlign.new_step()|. When used in terms of alignment
+steps, callable takes two arguments: some object (parts or string array)
+and option table.
 
-STEP    A named callable. See |MiniAlign.new_step()|. When used in terms of
-        alignment steps, callable takes two arguments: some object (parts
-        or string array) and option table.
+SPLIT ~
+Process of taking array of strings and converting it into parts.
 
-SPLIT   Process of taking array of strings and converting it into parts.
+JUSTIFY ~
+Process of taking parts and converting them to aligned parts (all elements
+have same widths inside columns).
 
-JUSTIFY Process of taking parts and converting them to aligned parts (all
-        elements have same widths inside columns).
+MERGE ~
+Process of taking parts and converting it back to array of strings. Usually
+by concatenating rows into strings.
 
-MERGE   Process of taking parts and converting it back to array of strings.
-        Usually by concatenating rows into strings.
+REGION ~
+Table representing region in a buffer. Fields <from> / <to> have inclusive
+start / end positions (<to> might be `nil` to describe empty region).
+Positions are also tables with <line> and <col> fields (both start at 1).
 
-REGION  Table representing region in a buffer. Fields: <from> and <to> for
-        inclusive start and end positions (<to> might be `nil` to describe
-        empty region). Each position is also a table with line <line> and
-        column <col> (both start at 1).
-
-MODE    Either charwise ("char", `v`, |charwise|), linewise ("line", `V`,
-        |linewise|) or blockwise ("block", `<C-v>`, |blockwise-visual|)
+MODE ~
+Either charwise ("char", `v`, |charwise|), linewise ("line", `V`, |linewise|)
+or blockwise ("block", `<C-v>`, |blockwise-visual|)
 
 ------------------------------------------------------------------------------
                                                            *MiniAlign-algorithm*
-Algorithm design
-
 There are two main processes implemented in 'mini.align': strings alignment
 and interactive region alignment. See |MiniAlign-glossary| for more information
 about used terms.
 
-Strings alignment ~
+# Strings alignment ~
 
 Main implementation is in |MiniAlign.align_strings()|. Its input is array of
 strings and output - array of aligned strings. The process consists from three
@@ -167,21 +170,21 @@ Notes:
   This allows steps to "talk" to each other, i.e. earlier steps can pass data
   to later ones.
 
-Interactive region alignment ~
+# Interactive region alignment ~
 
 Interactive alignment is a main entry point for most users. It can be done
 in two flavors:
-- <Without preview>. Initiated via mapping defined in `start` of
+- <Without-preview>. Initiated via mapping defined in `start` of
   `MiniAlign.config.mappings`. Alignment is accepted once split pattern becomes
   non-default.
-- <With preview>. Initiated via mapping defined in `start_with_preview` of
+- <With-preview>. Initiated via mapping defined in `start_with_preview` of
   `MiniAlign.config.mappings`. Alignment result is shown after every modifier
   and is accepted after `<CR>` (`Enter`) is hit. Note: each preview is done by
   applying current alignment steps and options to the initial region lines,
   not the ones currently displaying in preview.
 
 Lifecycle (assuming default mappings):
-- <Initiate alignment>:
+- <Initiate-alignment>:
     - In Normal mode type `ga` (or `gA` to show preview) followed by textobject
       or motion defining region to be aligned.
     - In Visual mode select region and type `ga` (or `gA` to show preview).
@@ -189,7 +192,7 @@ Lifecycle (assuming default mappings):
   |MiniAlign.align_strings()|.
   Beware of mode when selecting region: charwise (`v`), linewise (`V`), or
   blockwise (`<C-v>`). They all behave differently.
-- <Press modifiers>. Press single keys one at a time:
+- <Press-modifiers>. Press single keys one at a time:
     - If pressed key is among table keys of `modifiers` table of
       |MiniAlign.config|, its function value is executed. It usually modifies
       some options(s) and/or affects some pre-step(s).
@@ -197,7 +200,7 @@ Lifecycle (assuming default mappings):
       split pattern.
   This process can either end by itself (usually in case of no preview and
   non-default split pattern being set) or you can choose to end it manually.
-- <Accept or discard>. In case of active preview, accept current result by
+- <Accept-or-discard>. In case of active preview, accept current result by
   pressing `<CR>`. Discard any result and return to initial regions with
   either `<Esc>` or `<C-c>`.
 
@@ -219,163 +222,161 @@ might be helpful to copy lines into modifiable buffer and experiment yourself.
 Notes:
 - Any pressed key which doesn't have defined modifier will be treated as
   plain split pattern.
-- All modifiers can be customized inside |MiniAlign.setup|. See "Modifiers"
+- All modifiers can be customized inside |MiniAlign.setup()|. See "Modifiers"
   section of |MiniAlign.config|.
 
-Main option modifiers ~
+# Main option modifiers ~
 
 <s> Enter split pattern (confirm prompt by pressing `<CR>`). Input is treated
-    as plain delimiter.
+  as plain delimiter.
 
-    Before: >
-    a-b-c
-    aa-bb-cc
+  Before: >
+  a-b-c
+  aa-bb-cc
 <
-    After typing `s-<CR>`: >
-    a -b -c
-    aa-bb-cc
+  After typing `s-<CR>`: >
+  a -b -c
+  aa-bb-cc
 <
 <j> Choose justify side. Prompts user (with helper message) to type single
-    character identifier of side: `l`eft, `c`enter, `r`ight, `n`one.
+  character identifier of side: `l`eft, `c`enter, `r`ight, `n`one.
 
-    Before: >
-    a_b_c
-    aa_bb_cc
+  Before: >
+  a_b_c
+  aa_bb_cc
 <
-    After typing `_jr` (first make split by `_`): >
-     a_ b_ c
-    aa_bb_cc
+  After typing `_jr` (first make split by `_`): >
+   a_ b_ c
+  aa_bb_cc
 <
 <m> Enter merge delimiter (confirm prompt by pressing `<CR>`).
 
-    Before: >
-    a_b_c
-    aa_bb_cc
+  Before: >
+  a_b_c
+  aa_bb_cc
 <
-    After typing `_m--<CR>` (first make split by `_`): >
-    a --_--b --_--c
-    aa--_--bb--_--cc
+  After typing `_m--<CR>` (first make split by `_`): >
+  a --_--b --_--c
+  aa--_--bb--_--cc
 <
-Modifiers adding pre-steps ~
+# Modifiers adding pre-steps ~
 
 <f> Enter filter expression. See more details in |MiniAlign.gen_step.filter()|.
 
-    Before: >
-    a_b_c
-    aa_bb_cc
+  Before: >
+  a_b_c
+  aa_bb_cc
 <
-    After typing `_fn==1<CR>` (first make split by `_`): >
-    a _b_c
-    aa_bb_cc
+  After typing `_fn==1<CR>` (first make split by `_`): >
+  a _b_c
+  aa_bb_cc
 <
 <i> Ignore some split matches. It modifies `split_exclude_patterns` option by
-    adding commonly wanted patterns. See more details in
-    |MiniAlign.gen_step.ignore_split()|.
+  adding commonly wanted patterns. See more details in
+  |MiniAlign.gen_step.ignore_split()|.
 
-    Before: >
-    /* This_is_assumed_to_be_comment */
-    a"_"_b
-    aa_bb
+  Before: >
+  /* This_is_assumed_to_be_comment */
+  a"_"_b
+  aa_bb
 <
-    After typing `_i` (first make split by `_`): >
-    /* This_is_assumed_to_be_comment */
-    a"_"_b
-    aa  _bb
+  After typing `_i` (first make split by `_`): >
+  /* This_is_assumed_to_be_comment */
+  a"_"_b
+  aa  _bb
 <
 <p> Pair neighboring parts.
 
-    Before: >
-    a_b_c
-    aaa_bbb_ccc
+  Before: >
+  a_b_c
+  aaa_bbb_ccc
 <
-    After typing `_p` (first make split by `_`): >
-    a_  b_  c
-    aaa_bbb_ccc
+  After typing `_p` (first make split by `_`): >
+  a_  b_  c
+  aaa_bbb_ccc
 <
 <t> Trim parts from whitespace on both sides (keeping indentation).
 
-    Before: >
-    a   _   b   _   c
-      aa _bb _cc
+  Before: >
+  a   _   b   _   c
+    aa _bb _cc
 <
-    After typing `_t` (first make split by `_`): >
-    a   _b _c
-      aa_bb_cc
+  After typing `_t` (first make split by `_`): >
+  a   _b _c
+    aa_bb_cc
 <
-Delete some last pre-step ~
+# Delete some last pre-step ~
 
 <BS> Delete one of the pre-steps. If there is only one kind of pre-steps,
-     remove its latest added one. If not, prompt user to choose pre-step kind
-     by entering single character: `s`plit, `j`ustify, `m`erge.
+  remove its latest added one. If not, prompt user to choose pre-step kind
+  by entering single character: `s`plit, `j`ustify, `m`erge.
 
-     Examples:
-     - `tp<BS>` results in only "trim" step to be left.
-     - `it<BS>` prompts to choose which step to delete (pre-split or
-       pre-justify in this case).
+  Examples:
+  - `tp<BS>` results in only "trim" step to be left.
+  - `it<BS>` prompts to choose which step to delete (pre-split or
+    pre-justify in this case).
 
-Special configurations for common splits ~
+# Special configurations for common splits ~
 
 <=> Use special pattern to align by a group of consecutive "=". It can be
-    preceded by any number of punctuation marks and followed by some sommon
-    punctuation characters. Trim whitespace and merge with single space.
+  preceded by any number of punctuation marks and followed by some sommon
+  punctuation characters. Trim whitespace and merge with single space.
 
-    Before: >
-    a=b
-    aa<=bb
-    aaa===bbb
-    aaaa   =   cccc
+  Before: >
+  a=b
+  aa<=bb
+  aaa===bbb
+  aaaa   =   cccc
 <
-    After typing `=`: >
-    a    =   b
-    aa   <=  bb
-    aaa  === bbb
-    aaaa =   cccc
+  After typing `=`: >
+  a    =   b
+  aa   <=  bb
+  aaa  === bbb
+  aaaa =   cccc
 <
 <,> Besides splitting by "," character, trim whitespace, pair neighboring
-    parts and merge with single space.
+  parts and merge with single space.
 
-    Before: >
-    a,b
-    aa,bb
-    aaa    ,    bbb
+  Before: >
+  a,b
+  aa,bb
+  aaa    ,    bbb
 <
-    After typing `,`: >
-    a,   b
-    aa,  bb
-    aaa, bbb
+  After typing `,`: >
+  a,   b
+  aa,  bb
+  aaa, bbb
 <
 <|> Split by "|" character, trim whitespace, merge with single space.
 
-    Before: >
-    |a|b|
-    |aa|bb|
-    |aaa    |    bbb   |
+  Before: >
+  |a|b|
+  |aa|bb|
+  |aaa    |    bbb   |
 <
-    After typing `|`: >
-    | a   | b   |
-    | aa  | bb  |
-    | aaa | bbb |
+  After typing `|`: >
+  | a   | b   |
+  | aa  | bb  |
+  | aaa | bbb |
 <
-< > (Space bar) Squash consecutive whitespace into single single space (accept
-    possible indentation) and split by `%s+` pattern (keeps indentation).
+<Space> (Space bar) Squash consecutive whitespace into single space (except
+  possible indentation) and split by `%s+` pattern (keeps indentation).
 
-    Before: >
-    a b c
-      aa    bb   cc
+  Before: >
+  a b c
+    aa    bb   cc
 <
-    After typing `<Space>`: >
-      a  b  c
-      aa bb cc
-
+  After typing `<Space>`: >
+    a  b  c
+    aa bb cc
+<
 ------------------------------------------------------------------------------
                                                             *MiniAlign-examples*
-More complex examples to explore functionality
-
 Copy lines in modifiable buffer, initiate alignment with preview (`gAip`)
 and try typing suggested key sequences.
 These are modified examples taken from 'junegunn/vim-easy-align'.
 
-Equal sign ~
+# Equal sign ~
 
 Lines: >
 
@@ -436,9 +437,7 @@ Usage ~
 ------------------------------------------------------------------------------
                                                               *MiniAlign.config*
                                `MiniAlign.config`
-Module config
-
-Default values:
+Defaults ~
 >lua
   MiniAlign.config = {
     -- Module mappings. Use `''` (empty string) to disable one.
@@ -493,9 +492,7 @@ Default values:
     silent = false,
   }
 <
-# Options ~
-
-## Modifiers ~
+# Modifiers ~
 
 `MiniAlign.config.modifiers` is used to define interactive user experience
 of managing alignment process. It is a table with single character keys and
@@ -537,7 +534,7 @@ Examples:
     },
   })
 <
-## Options ~
+# Options ~
 
 `MiniAlign.config.options` defines default values of options used to control
 behavior of steps.
@@ -548,7 +545,7 @@ Examples:
 For more details about options see |MiniAlign.align_strings()| and entries of
 |MiniAlign.gen_step| for default main steps.
 
-## Steps ~
+# Steps ~
 
 `MiniAlign.config.steps` defines default steps to be applied during
 alignment process.
@@ -575,11 +572,11 @@ Parameters ~
 {opts} `(table|nil)` Options. Its copy will be passed to steps as second
   argument. Extended with `MiniAlign.config.options`.
   This is a place to control default main steps:
-    - `opts.split_pattern` - Lua pattern(s) used to make split parts.
-    - `opts.split_exclude_patterns` - which split matches should be ignored.
-    - `opts.justify_side` - which direction(s) alignment should be done.
-    - `opts.justify_offsets` - offsets tweaking width of first column
-    - `opts.merge_delimiter` - which delimiter(s) to use when merging.
+  - `opts.split_pattern` - Lua pattern(s) used to make split parts.
+  - `opts.split_exclude_patterns` - which split matches should be ignored.
+  - `opts.justify_side` - which direction(s) alignment should be done.
+  - `opts.justify_offsets` - offsets tweaking width of first column
+  - `opts.merge_delimiter` - which delimiter(s) to use when merging.
   For more information see |MiniAlign.gen_step| entry for corresponding
   default step.
 {steps} `(table|nil)` Steps. Extended with `MiniAlign.config.steps`.
@@ -638,18 +635,18 @@ Fields ~
   signature `(mask, direction)` and modifies parts in place. Returns parts
   itself to enable method chaining.
   Example:
-  - Parts: { { "a", "b", "c" }, { "d", "e" }, { "f" } }
-  - Mask: { { false, false, true }, { true, false }, { false } }
-  - Result for direction "left":  { { "abc" },    { "d", "e" }, { "f" } }
-  - Result for direction "right": { { "ab","c" }, { "de" },     { "f" } }
+  - Parts: `{ { "a", "b", "c" }, { "d", "e" }, { "f" } }`
+  - Mask: `{ { false, false, true }, { true, false }, { false } }`
+  - Result for direction "left":  `{ { "abc" },    { "d", "e" }, { "f" } }`
+  - Result for direction "right": `{ { "ab","c" }, { "de" },     { "f" } }`
 
 {pair} `(function)` Concatenate neighboring element pairs. Takes
   `direction` as input (one of "left", default, or "right") and applies
   `group()` for an alternating mask.
   Example:
-  - Parts: { { "a", "b", "c" }, { "d", "e" }, { "f" } }
-  - Result for direction "left":  { { "ab", "c" }, { "de" }, { "f" } }
-  - Result for direction "right": { { "a", "bc" }, { "de" }, { "f" } }
+  - Parts: `{ { "a", "b", "c" }, { "d", "e" }, { "f" } }`
+  - Result for direction "left":  `{ { "ab", "c" }, { "de" }, { "f" } }`
+  - Result for direction "right": `{ { "a", "bc" }, { "de" }, { "f" } }`
 
 {slice_col} `(function)` Return column with input index `j`. Note: it might
   not be an array if rows have unequal number of columns.
