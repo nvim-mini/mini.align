@@ -11,9 +11,10 @@
 ---     - <Split> lines into parts based on Lua pattern(s) or user-supplied rule.
 ---     - <Justify> parts for certain side(s) to be same width inside columns.
 ---     - <Merge> parts to be lines, with customizable delimiter(s).
----   Each main step can be preceded by other steps (pre-steps) to achieve
----   highly customizable outcome. See `steps` value in |MiniAlign.config|. For
----   more details, see |MiniAlign-glossary| and |MiniAlign-algorithm|.
+---
+---     Each main step can be preceded by other steps (pre-steps) to achieve
+---     highly customizable outcome. See `steps` value in |MiniAlign.config|.
+---     For more details, see |MiniAlign-glossary| and |MiniAlign-algorithm|.
 ---
 --- - User can control alignment interactively by pressing customizable modifiers
 ---   (single keys representing how alignment steps and/or options should change).
@@ -28,7 +29,8 @@
 ---     - Press `p` to pair neighboring parts so they be aligned together.
 ---     - Press `t` to trim whitespace from parts.
 ---     - Press `<BS>` (backspace) to delete some last pre-step.
----   For more details, see |MiniAlign-modifiers-builtin| and |MiniAlign-examples|.
+---
+---     For more details, see |MiniAlign-modifiers-builtin| and |MiniAlign-examples|.
 ---
 --- - Alignment can be done with instant preview (result is updated after each
 ---   modifier) or without it (result is shown and accepted after non-default
